@@ -2,7 +2,7 @@ name: ExilliumAdmins
 version: 1.0.0
 main: com.dylanok.exilliumadmins.ExilliumAdminsPlugin
 api-version: '1.21'
-author: dylanok
+author: ExilliumTeam
 description: Unified kick, mute and warn administration plugin.
 
 commands:
