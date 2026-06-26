@@ -23,6 +23,10 @@ import org.bukkit.profile.PlayerProfile;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,6 +45,7 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
     private static final String PREFIX = "§8[§6Exillium§8] §r";
     private static final int LOGS_PER_PAGE = 10;
     private static final int KICK_LOGS_PER_PAGE = 5;
+    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     private File kickFile;
     private FileConfiguration kickConfig;
@@ -51,6 +56,8 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
     private File warnFile;
     private FileConfiguration warnConfig;
     private File warnLogFile;
+    private String discordWebhookUrl;
+    private boolean discordWebhookEnabled;
 
     private final Map<UUID, MuteData> mutes = new ConcurrentHashMap<>();
 
@@ -126,6 +133,10 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
             getDataFolder().mkdirs();
         }
 
+        saveDefaultConfig();
+        discordWebhookEnabled = getConfig().getBoolean("discord-webhook.enabled", false);
+        discordWebhookUrl = getConfig().getString("discord-webhook.url", "");
+
         kickFile = ensureFile("kicklogs.yml");
         kickConfig = YamlConfiguration.loadConfiguration(kickFile);
 
@@ -175,6 +186,7 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
         kickConfig.set("kicks." + id + ".date", date);
         saveConfigFile(kickConfig, kickFile);
 
+        sendDiscordLog("KICK", admin, target.getName(), reason, date);
         Bukkit.broadcastMessage("§c" + admin + " кикнул " + target.getName() + " по причине: " + reason);
         target.kickPlayer("§cВы были кикнуты с сервера\n\n§7Администратор: §f" + admin + "\n§7Причина: §f" + reason);
         return true;
@@ -903,5 +915,64 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
         } catch (IOException exception) {
             getLogger().warning("Could not write log " + file.getName() + ": " + exception.getMessage());
         }
+
+        sendDiscordLog(action, admin, player, reason, time);
+    }
+
+    private void sendDiscordLog(String action, String admin, String player, String reason, String time) {
+        if (!discordWebhookEnabled || discordWebhookUrl == null || discordWebhookUrl.isBlank()) {
+            return;
+        }
+
+        String content = "**" + action + "**"
+                + "\n**Игрок:** " + nullSafe(player)
+                + "\n**Админ:** " + nullSafe(admin)
+                + "\n**Причина:** " + nullSafe(reason)
+                + "\n**Время:** " + nullSafe(time);
+        String body = "{\"username\":\"ExilliumAdmins\",\"content\":\"" + escapeJson(content) + "\"}";
+
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
+            try {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(discordWebhookUrl))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(body))
+                        .build();
+                HttpResponse<Void> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    getLogger().warning("Discord webhook returned HTTP " + response.statusCode());
+                }
+            } catch (IllegalArgumentException | IOException | InterruptedException exception) {
+                if (exception instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                getLogger().warning("Could not send Discord webhook: " + exception.getMessage());
+            }
+        });
+    }
+
+    private String nullSafe(String value) {
+        return value == null || value.isBlank() ? "-" : value;
+    }
+
+    private String escapeJson(String value) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char character = value.charAt(i);
+            switch (character) {
+                case '"' -> builder.append("\\\"");
+                case '\\' -> builder.append("\\\\");
+                case '\n' -> builder.append("\\n");
+                case '\r' -> builder.append("\\r");
+                case '\t' -> builder.append("\\t");
+                default -> {
+                    if (character < 0x20) {
+                        builder.append(String.format("\\u%04x", (int) character));
+                    } else {
+                        builder.append(character);
+                    }
+                }
+            }
+        }
+        return builder.toString();
     }
 }
