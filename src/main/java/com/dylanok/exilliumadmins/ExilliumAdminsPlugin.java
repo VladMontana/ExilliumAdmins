@@ -924,12 +924,16 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
             return;
         }
 
-        String content = "**" + action + "**"
-                + "\n**Игрок:** " + nullSafe(player)
-                + "\n**Админ:** " + nullSafe(admin)
-                + "\n**Причина:** " + nullSafe(reason)
-                + "\n**Время:** " + nullSafe(time);
-        String body = "{\"username\":\"ExilliumAdmins\",\"content\":\"" + escapeJson(content) + "\"}";
+        String body = "{\"username\":\"ExilliumAdmins\",\"embeds\":[{"
+                + "\"title\":\"" + escapeJson(action) + "\","
+                + "\"color\":" + discordColor(action) + ","
+                + "\"fields\":["
+                + discordField("Игрок", nullSafe(player), true) + ","
+                + discordField("Админ", nullSafe(admin), true) + ","
+                + discordField("Причина", nullSafe(reason), false) + ","
+                + discordField("Время", nullSafe(time), true)
+                + "]"
+                + "}]}";
 
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
             try {
@@ -948,6 +952,23 @@ public final class ExilliumAdminsPlugin extends JavaPlugin implements Listener, 
                 getLogger().warning("Could not send Discord webhook: " + exception.getMessage());
             }
         });
+    }
+
+    private int discordColor(String action) {
+        return switch (action.toUpperCase(Locale.ROOT)) {
+            case "BAN", "UNBAN" -> 15_158_332;
+            case "KICK" -> 3_447_003;
+            case "MUTE" -> 16_753_920;
+            case "UNMUTE" -> 5_765_719;
+            case "WARN", "UNWARN" -> 15_834_893;
+            default -> 9_802_727;
+        };
+    }
+
+    private String discordField(String name, String value, boolean inline) {
+        return "{\"name\":\"" + escapeJson(name)
+                + "\",\"value\":\"" + escapeJson(value)
+                + "\",\"inline\":" + inline + "}";
     }
 
     private String nullSafe(String value) {
