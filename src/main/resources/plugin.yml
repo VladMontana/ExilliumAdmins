@@ -1,0 +1,91 @@
+name: ExilliumAdmins
+version: 1.0.0
+main: com.dylanok.exilliumadmins.ExilliumAdminsPlugin
+api-version: '1.21'
+author: dylanok
+description: Unified kick, mute and warn administration plugin.
+
+commands:
+  kick:
+    description: Кикнуть игрока
+    usage: /kick <игрок> <причина>
+    permission: exilliumadmins.kick
+  kicklog:
+    description: История киков игрока
+    usage: /kicklog <игрок> [страница]
+    permission: exilliumadmins.kicklog
+  mute:
+    description: Замутить игрока
+    usage: /mute <игрок> <время|perm> <причина>
+    permission: exilliumadmins.mute
+  unmute:
+    description: Снять мут
+    usage: /unmute <игрок>
+    permission: exilliumadmins.mute
+  checkmute:
+    description: Проверить мут игрока
+    usage: /checkmute <игрок>
+    permission: exilliumadmins.mute
+  mutelist:
+    description: Список активных мутов
+    usage: /mutelist [страница]
+    permission: exilliumadmins.mute
+  mutelog:
+    description: История мутов игрока
+    usage: /mutelog <игрок> [страница]
+    permission: exilliumadmins.mutelog
+  ban:
+    description: Забанить игрока
+    usage: /ban <игрок> <время|perm> <причина>
+    permission: exilliumadmins.ban
+  unban:
+    description: Разбанить игрока
+    usage: /unban <игрок>
+    permission: exilliumadmins.ban
+  warn:
+    description: Выдать варн
+    usage: /warn <игрок> <время> <причина>
+    permission: exilliumadmins.warn
+  unwarn:
+    description: Снять варн по ID
+    usage: /unwarn <игрок> <id>
+    permission: exilliumadmins.warn
+  warnlist:
+    description: Список игроков с активными варнами
+    usage: /warnlist [страница]
+    permission: exilliumadmins.warn
+  warninfo:
+    description: Активные варны игрока
+    usage: /warninfo <игрок>
+    permission: exilliumadmins.warn
+  warnlog:
+    description: История варнов игрока
+    usage: /warnlog <игрок> [страница]
+    permission: exilliumadmins.warnlog
+
+permissions:
+  exilliumadmins.admin:
+    description: Все права ExilliumAdmins
+    default: op
+    children:
+      exilliumadmins.kick: true
+      exilliumadmins.kicklog: true
+      exilliumadmins.mute: true
+      exilliumadmins.mutelog: true
+      exilliumadmins.ban: true
+      exilliumadmins.warn: true
+      exilliumadmins.warnlog: true
+  exilliumadmins.kick:
+    default: op
+  exilliumadmins.kicklog:
+    default: op
+  exilliumadmins.mute:
+    default: op
+  exilliumadmins.mutelog:
+    default: op
+  exilliumadmins.ban:
+    default: op
+  exilliumadmins.warn:
+    default: op
+  exilliumadmins.warnlog:
+    default: op
